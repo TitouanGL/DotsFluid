@@ -5,7 +5,7 @@ using Unity.Mathematics;
 using Unity.Collections;
 using System;
 
-public class FluidController : MonoBehaviour
+public class SteppedFluidController : MonoBehaviour
 {
     [SerializeField] int3 gridSize;
     float[] datas;
@@ -24,7 +24,7 @@ public class FluidController : MonoBehaviour
         //datas[400] = 1;
         //datas[500] = 1;
 
-        int randomFluidcount = Mathf.RoundToInt(datas.Length/3f);
+        int randomFluidcount = Mathf.RoundToInt(datas.Length / 3f);
         for (int i = 0; i < randomFluidcount; i++)
             datas[UnityEngine.Random.Range(0, datas.Length)] = UnityEngine.Random.Range(minquantity, 1f);
 
@@ -34,17 +34,17 @@ public class FluidController : MonoBehaviour
 
     private void Update()
     {
-        if(Input.anyKeyDown)
+        if (Input.anyKeyDown)
         {
             //for (int i = 0; i < 10; i++)
-             //   datas[UnityEngine.Random.Range(900, 1000)] = UnityEngine.Random.value;
+            //   datas[UnityEngine.Random.Range(900, 1000)] = UnityEngine.Random.value;
 
             ApplyFluidMove();
         }
     }
 
     [ContextMenu("TestCoord")]
-    void TestCoord ()
+    void TestCoord()
     {
         int3 coord = new int3(UnityEngine.Random.Range(0, gridSize.x), UnityEngine.Random.Range(0, gridSize.y), UnityEngine.Random.Range(0, gridSize.z));
         Debug.Log("coord : " + coord);
@@ -126,7 +126,7 @@ public class FluidController : MonoBehaviour
 
         List<FluidQuantity> adjacentUnderFluidValues = new List<FluidQuantity>(adjacentUnder.Count);
 
-        
+
         List<FluidPower> adjacent = new List<FluidPower>();
         adjacent.Add(new FluidPower(new int3(1, 0, 0), adjcentPower)); // right
         adjacent.Add(new FluidPower(new int3(-1, 0, 0), adjcentPower)); // Left
@@ -140,7 +140,7 @@ public class FluidController : MonoBehaviour
 
         List<FluidQuantity> adjacentFluidValues = new List<FluidQuantity>(adjacent.Count);
 
-        List<int> toModify = new List<int>(datas.Length/3);
+        List<int> toModify = new List<int>(datas.Length / 3);
 
         for (int i = 0; i < gridSize.x * gridSize.y * gridSize.z; i++)
         {
@@ -151,8 +151,6 @@ public class FluidController : MonoBehaviour
         for (int p = 0; p < toModify.Count; p++)
         {
             int i = toModify[p];
-            //for (int i = 0; i < gridSize.x * gridSize.y * gridSize.z; i++)
-        //{
             float fluidLeft = datas[i];
             if (fluidLeft <= 0)
                 continue;
@@ -167,14 +165,18 @@ public class FluidController : MonoBehaviour
                 fluidLeft -= delta;
                 datas[i] = fluidLeft;
             }
+        }
 
+        // Around Under
+        for (int p = 0; p < toModify.Count; p++)
+        {
+            int i = toModify[p];
+            float fluidLeft = datas[i];
             if (fluidLeft <= 0)
-            {
-                datas[i] = fluidLeft;
                 continue;
-            }
 
-            // Around Under
+            int3 coord = CalculateCoord(i);
+
             if (coord.y > 0)
             {
                 adjacentUnderFluidValues.Clear();
@@ -224,12 +226,18 @@ public class FluidController : MonoBehaviour
                     datas[adjacentUnderFluidValues[o].index] = adjacentUnderFluidValues[o].quantity;
                 }
             }
+        }
 
-            if (fluidLeft <= minquantity)
-            {
-                datas[i] = fluidLeft;
+
+        // Adjacent
+        for (int p = 0; p < toModify.Count; p++)
+        {
+            int i = toModify[p];
+            float fluidLeft = datas[i];
+            if (fluidLeft <= 0)
                 continue;
-            }
+
+            int3 coord = CalculateCoord(i);
 
             // Around
             adjacentFluidValues.Clear();
@@ -245,7 +253,6 @@ public class FluidController : MonoBehaviour
 
                     fluidLeft -= adjacentQuantity;
                     datas[rank] += adjacentQuantity;
-                    Debug.Log(datas[rank] + "  " + adjacentQuantity);
                 }
             }
 
@@ -287,7 +294,7 @@ public class FluidController : MonoBehaviour
             {
                 if (datas[i] != 0f)
                 {
-                    Gizmos.DrawWireCube(CalculatePosition(i), (datas[i]/2f + 0.5f) * Vector3.one);
+                    Gizmos.DrawWireCube(CalculatePosition(i), (datas[i] / 2f + 0.5f) * Vector3.one);
                 }
             }
         }
